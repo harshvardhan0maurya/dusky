@@ -62,6 +62,7 @@ readonly TARGET_FILES=(
     "cache_purge.desktop"
     "clipboard_persistance.desktop"
     "file_switcher.desktop"
+    "google_image_search.desktop"
     "hypridle_timeout.desktop"
     "hypridle_toggle.desktop"
     "hyprlock_switcher.desktop"
