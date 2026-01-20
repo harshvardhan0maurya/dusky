@@ -71,8 +71,8 @@ tooltip label {
     color: transparent;
 
     font-size: 0px;
-    min-width: 25px;
-    min-height: 25px;
+    min-width: 24px;
+    min-height: 15px;
 
     transition: all 0.3s cubic-bezier(0.55, -0.04, 0.3, 1.44);
 }
@@ -82,7 +82,7 @@ tooltip label {
     color: @background;
 
     font-size: 12px;
-    min-width: 40px;
+    min-width: 24px;
     padding: 0 6px;
 }
 
@@ -142,7 +142,7 @@ tooltip label {
 
 #custom-arch {
     color: @primary;
-    font-size: 17px;
+    font-size: 16px;
     margin: 0 6px;
     padding: 5px 14px 5px 11px;
 }
@@ -157,7 +157,7 @@ tooltip label {
 #custom-logout,
 #custom-reboot,
 #custom-shutdown {
-    font-size: 17px;
+    font-size: 14px;
     margin: 0 6px;
     padding: 5px 12px 5px 11px; 
     color: @primary;
@@ -254,9 +254,9 @@ tooltip label {
 }
 
 #network { 
-	font-size: 17px;
+	font-size: 16px;
 	color: @primary_container; 
-  padding: 6px 14px 4px 9px;
+  padding: 5px 14px 4px 9px;
 }
 	
 #network:hover {
