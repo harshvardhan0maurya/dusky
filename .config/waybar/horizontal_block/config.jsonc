@@ -1,3 +1,5 @@
+//horizontal_block
+
 {
   "layer": "top",
   "exclusive": true,
@@ -18,8 +20,8 @@
     "custom/inhibit-suspend",
     "custom/updates",
     "custom/notification",
-    "custom/theme-toggle",
-    "tray"
+    "custom/theme-toggle"
+  //  "tray"
   ],
 
   "modules-center": [
