@@ -498,6 +498,8 @@ configure_monitor() {
             return ;;
     esac
 
+    res="${res//Hz/}"
+
     # Resolve preferred for math
     local res_math="$res"
     [[ "$res" == "preferred" && "$max_mode" != "preferred" ]] && res_math="$max_mode"
@@ -574,6 +576,8 @@ quick_toggle() {
         target_mode="$max_mode"
         info "Switching to: Max Performance"
     fi
+
+    target_mode="${target_mode//Hz/}"
 
     apply_monitor_config "$name" "$name,$target_mode,${current_x%%.*}x${current_y%%.*},$current_scale"
 }
