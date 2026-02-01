@@ -28,6 +28,7 @@
 .config/swappy/
 .config/uwsm/
 .config/waybar/horizontal_block/
+.config/waybar/horizontal_block_translucent/
 .config/waybar/horizontal_block_compact/
 .config/waybar/horizontal_circular/
 .config/waybar/horizontal_minimal/
