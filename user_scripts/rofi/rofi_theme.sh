@@ -69,15 +69,23 @@ run_menu() {
     local selected
     local exit_code=0
 
+    # Capture stdout to variable, capture exit code to exit_code
     selected=$(printf '%s\n' "${options[@]}" | uwsm-app -- rofi -dmenu -i -p "$prompt" -theme-str 'window {width: 400px;}') || exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
         printf '%s' "$selected"
     elif [[ $exit_code -eq 1 ]]; then
-        # User Cancelled
+        # User Cancelled (ESC)
         log_info "User cancelled selection at '$prompt'."
         exit 0
+    elif [[ $exit_code -eq 143 ]] || [[ $exit_code -eq 130 ]]; then
+        # FIXED: Handle SIGTERM (143) and SIGINT (130)
+        # This occurs when 'pkill rofi' is run from the keybind.
+        # We treat this as a graceful abort.
+        log_info "Rofi interrupted by signal (Code $exit_code). Exiting gracefully."
+        exit 0
     else
+        # Genuine Crash
         logger -p user.err -t "$APP_NAME" "Rofi crashed with exit code $exit_code"
         notify-send -u critical "Theme Menu Error" "Rofi crashed (Code $exit_code)"
         exit 1
@@ -98,12 +106,6 @@ selected_type=$(run_menu "Scheme" "${OPTS_SCHEME[@]}")
 selected_contrast=$(run_menu "Contrast" "${OPTS_CONTRAST[@]}")
 [[ -z "$selected_contrast" ]] && exit 0
 
-# --- APPLY CHANGES ---
-
-log_info "Applying settings: Mode=$selected_mode, Type=$selected_type, Contrast=$selected_contrast"
-
-# Run controller but suppress script failure.
-# We capture the exit code for logging purposes only.
 # --- APPLY CHANGES ---
 
 log_info "Applying settings: Mode=$selected_mode, Type=$selected_type, Contrast=$selected_contrast"
