@@ -162,10 +162,6 @@ log_err() {
     printf '%s[ERROR]%s %s\n' "$C_RED" "$C_RESET" "$1" >&2
 }
 
-log_warn() {
-    printf '%s[WARN]%s %s\n' "$C_MAGENTA" "$C_RESET" "$1" >&2
-}
-
 cleanup() {
     # Restore terminal state (Mouse, Cursor, Colors)
     printf '%s%s%s' "$MOUSE_OFF" "$CURSOR_SHOW" "$C_RESET"
