@@ -56,7 +56,7 @@ MIN_STEP_VALUE: Final[float] = 1e-9
 SLIDER_DEBOUNCE_MS: Final[int] = 150
 SUBPROCESS_TIMEOUT_SHORT: Final[int] = 2
 SUBPROCESS_TIMEOUT_LONG: Final[int] = 5
-ICON_PIXEL_SIZE: Final[int] = 42
+ICON_PIXEL_SIZE: Final[int] = 28  # Aggressively reduced for compact cards
 LABEL_MAX_WIDTH_CHARS: Final[int] = 16
 EXECUTOR_MAX_WORKERS: Final[int] = 4
 
@@ -1345,7 +1345,7 @@ class GridCardBase(Gtk.Button):
 
     def _build_content(self, icon: str, title: str) -> Gtk.Box:
         """Build the card's vertical box content."""
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2) # TIGHTER SPACING
         box.set_valign(Gtk.Align.CENTER)
         box.set_halign(Gtk.Align.CENTER)
 

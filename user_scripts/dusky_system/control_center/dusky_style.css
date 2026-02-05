@@ -355,9 +355,9 @@ scale:backdrop highlight {
     background-color: alpha(@card_bg_color, 0.45);
     border: 1px solid alpha(@borders, 0.35);
     border-radius: 14px;
-    padding: 14px 10px;
-    min-width: 90px;
-    min-height: 80px;
+    padding: 6px 4px; /* Significantly reduced padding */
+    min-width: 65px;  /* Reduced width */
+    min-height: 65px; /* Reduced height */
     transition: background-color 180ms ease-out,
                 border-color 180ms ease-out,
                 box-shadow 180ms ease-out;
@@ -391,14 +391,14 @@ scale:backdrop highlight {
 }
 
 .hero-title {
-    font-weight: 700;
-    font-size: 0.8em;
+    font-weight: 800;
+    font-size: 0.90em;
     color: @window_fg_color;
 }
 
 .hero-subtitle {
-    font-weight: 500;
-    font-size: 0.72em;
+    font-weight: 900;
+    font-size: 0.7em; /* Reduced font size */
     color: alpha(@window_fg_color, 0.55);
     margin-top: 3px;
 }
@@ -609,8 +609,8 @@ flowboxchild:selected {
     background-color: @error_bg_color;
     color: @error_fg_color;
     border-radius: 99px;
-    padding: 4px 3px 3px 4px;
-    font-size: 14px;
+    padding: 0 6px;
+    font-size: 10px;
     font-weight: 900;
     min-width: 18px;
     min-height: 18px;
