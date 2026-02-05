@@ -199,6 +199,7 @@ class RowProperties(TypedDict, total=False):
     key_inverse: bool
     save_as_int: bool
     state_command: str
+    value_command: str  # ADDED: Command to fetch slider value
     min: float
     max: float
     step: float
@@ -557,6 +558,96 @@ class StateMonitorMixin:
 
 
 # =============================================================================
+# MIXIN: SLIDER MONITORING (NEW)
+# =============================================================================
+class SliderMonitorMixin:
+    """
+    Mixin providing numeric value monitoring via periodic polling.
+    Used by sliders to sync with system state on load and periodically.
+    """
+
+    _state: WidgetState
+    properties: RowProperties
+
+    def _start_value_monitor(self) -> None:
+        """Initialize value monitoring loop if configured."""
+        if not self.properties.get("value_command"):
+            return
+
+        interval = _safe_int(
+            self.properties.get("interval"), MONITOR_INTERVAL_SECONDS
+        )
+        if interval <= 0:
+            return
+
+        # Perform initial fetch immediately
+        self._check_value_tick()
+
+        with self._state.lock:
+            if self._state.is_destroyed:
+                return
+            # We reuse monitor_source_id as this widget won't use StateMonitorMixin
+            self._state.monitor_source_id = GLib.timeout_add_seconds(
+                interval, self._check_value_tick
+            )
+
+    def _check_value_tick(self) -> bool:
+        """GLib timeout callback for periodic value checks."""
+        if isinstance(self, Gtk.Widget) and not self.get_mapped():
+            return GLib.SOURCE_CONTINUE
+
+        with self._state.lock:
+            if self._state.is_destroyed:
+                return GLib.SOURCE_REMOVE
+            if self._state.is_monitoring:
+                return GLib.SOURCE_CONTINUE
+            self._state.is_monitoring = True
+
+        if not _submit_task_safe(self._check_value_async, self._state):
+            with self._state.lock:
+                self._state.is_monitoring = False
+
+        return GLib.SOURCE_CONTINUE
+
+    def _check_value_async(self) -> None:
+        """Fetch numeric value in a background thread."""
+        new_value: float | None = None
+        try:
+            with self._state.lock:
+                if self._state.is_destroyed:
+                    return
+
+            cmd = self.properties.get("value_command", "")
+            if isinstance(cmd, str) and cmd.strip():
+                result = subprocess.run(
+                    cmd.strip(),
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=SUBPROCESS_TIMEOUT_SHORT,
+                )
+                if result.returncode == 0:
+                    # Attempt to parse the first numeric value found
+                    val_str = result.stdout.strip()
+                    try:
+                        new_value = float(val_str)
+                    except ValueError:
+                        pass
+        except (subprocess.TimeoutExpired, OSError, subprocess.SubprocessError):
+            pass
+        finally:
+            with self._state.lock:
+                self._state.is_monitoring = False
+
+        if new_value is not None:
+            GLib.idle_add(self._apply_value_update, new_value)
+
+    def _apply_value_update(self, new_value: float) -> bool:
+        """Apply value update on main thread. Must be overridden."""
+        raise NotImplementedError
+
+
+# =============================================================================
 # BASE ROW CLASS
 # =============================================================================
 class BaseActionRow(DynamicIconMixin, Adw.ActionRow):
@@ -891,7 +982,7 @@ class LabelRow(BaseActionRow):
             return LABEL_NA
 
 
-class SliderRow(BaseActionRow):
+class SliderRow(SliderMonitorMixin, BaseActionRow):
     """Action row with a slider suffix for continuous value adjustment."""
 
     __gtype_name__ = "DuskySliderRow"
@@ -910,7 +1001,8 @@ class SliderRow(BaseActionRow):
         self.step_val = step if step > MIN_STEP_VALUE else 1.0
         self.debounce_enabled = bool(properties.get("debounce", True))
 
-        self._slider_lock = threading.Lock()
+        # FIXED: Use RLock to prevent re-entrancy deadlock during signal emission
+        self._slider_lock = threading.RLock()
         self._slider_changing = False
         self._last_snapped: float | None = None
         self._pending_value: float | None = None
@@ -934,6 +1026,34 @@ class SliderRow(BaseActionRow):
         self.slider.set_size_request(250, -1) # FIXED WIDTH
         self.slider.connect("value-changed", self._on_value_changed)
         self.add_suffix(self.slider)
+
+        # Start monitoring if configured
+        self._start_value_monitor()
+
+    def _apply_value_update(self, new_value: float) -> bool:
+        """Apply monitored value to the slider without triggering action."""
+        with self._state.lock:
+            if self._state.is_destroyed:
+                return GLib.SOURCE_REMOVE
+
+        with self._slider_lock:
+            # Check if value is actually different to avoid unnecessary redraws
+            current = self.slider.get_value()
+            if abs(current - new_value) < self.step_val:
+                return GLib.SOURCE_REMOVE
+
+            # CRITICAL: Set flag to prevent _on_value_changed from firing the 'on_change' command
+            # This breaks the feedback loop (System -> Slider -> System)
+            self._slider_changing = True
+            try:
+                # Clamp value to bounds
+                safe_val = max(self.min_val, min(new_value, self.max_val))
+                self.slider.set_value(safe_val)
+                self._last_snapped = safe_val
+            finally:
+                self._slider_changing = False
+
+        return GLib.SOURCE_REMOVE
 
     def _on_value_changed(self, scale: Gtk.Scale) -> None:
         """Handle slider value changes with snapping and debouncing."""
@@ -1574,3 +1694,5 @@ class GridToggleCard(DynamicIconMixin, StateMonitorMixin, GridCardBase):
             utility.save_setting(
                 str(key).strip(), new_state ^ self.key_inverse, as_int=self.save_as_int
             )
+
+        return False

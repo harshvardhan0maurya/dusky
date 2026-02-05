@@ -94,6 +94,8 @@ pages:
         step: 1
         default: 50
         debounce: false
+        value_command: "wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print $2 * 100}'"
+        interval: 2
       on_change:
         type: exec
         command: wpctl set-volume @DEFAULT_AUDIO_SINK@ {value}%
@@ -106,6 +108,8 @@ pages:
         step: 1
         default: 50
         debounce: false
+        value_command: "brightnessctl -m | awk -F, '{print $4}' | tr -d %"
+        interval: 2
       on_change:
         type: exec
         command: brightnessctl set {value}%
