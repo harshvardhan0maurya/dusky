@@ -60,7 +60,7 @@ pages:
         style: destructive
       on_press:
         type: exec
-        command: systemctl --user try-restart dusky
+        command: $HOME/user_scripts/dusky_system/reload_cc/cc_restart.sh
         terminal: false
     - type: button
       properties:
