@@ -85,6 +85,10 @@ ln -nfs $HOME/.config/matugen/generated/kitty-colors.conf $HOME/.config/kitty/ki
 pkill -SIGUSR1 kitty || true
 '''
 
+[templates.opencode]
+input_path = '~/.config/matugen/templates/opencode.json'
+output_path = '~/.config/opencode/generated/opencode.json'
+
 [templates.alacritty]
 input_path  = '~/.config/matugen/templates/alacritty.toml'
 output_path = '~/.config/matugen/generated/alacritty-colors.toml'
