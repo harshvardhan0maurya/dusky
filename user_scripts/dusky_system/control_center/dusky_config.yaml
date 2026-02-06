@@ -64,7 +64,7 @@ pages:
         terminal: false
     - type: button
       properties:
-        title: Dusky Update
+        title: Dusky
         icon: system-software-update-symbolic
         style: suggested
         badge_file: ~/.config/dusky/settings/dusky_update_behind_commit
@@ -74,7 +74,7 @@ pages:
         terminal: false
     - type: button
       properties:
-        title: Power Menu
+        title: Power
         icon: system-log-out-symbolic
         style: destructive
       on_press:
@@ -544,6 +544,16 @@ pages:
           command: kitty --class power_saver_off.sh --title "Disable Power Saver"
             --hold sh -c "$HOME/user_scripts/battery/power_saving_off/power_saver_off.sh"
           terminal: false
+    - type: button
+      properties:
+        title: Dusky Power Manager
+        description: Configure lid, power key, and logind.conf settings
+        icon: preferences-system-power-symbolic
+        button_text: "Open"
+      on_press:
+        type: exec
+        command: kitty --class dusky_power.sh --title "Power Manager" --hold sh -c "$HOME/user_scripts/power/dusky_power.sh"
+        terminal: false
   - type: section
     properties:
       title: Input Devices
