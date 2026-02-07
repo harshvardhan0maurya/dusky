@@ -99,7 +99,7 @@ pages:
         - Power Saver
       on_change:
         type: exec
-        command: "mode=$(echo '{value}' | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g'); tlpctl $mode && notify-send 'Power Profile' 'Switched to {value}'"
+        command: "mode=$(echo '{value}' | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g'); tlpctl \"$mode\" && notify-send 'Power Profile' 'Switched to {value}'"
 
   - type: section
     properties:
