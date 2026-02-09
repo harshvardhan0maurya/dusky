@@ -33,7 +33,7 @@ declare -ri ITEM_PADDING=32
 
 declare -ri HEADER_ROWS=4
 declare -ri TAB_ROW=3
-declare -ri ITEM_START_ROW=$(( HEADER_ROWS + 2 ))
+declare -ri ITEM_START_ROW=$(( HEADER_ROWS + 1 ))
 
 declare -ra TABS=("General" "Input" "Display" "Misc")
 
