@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Purpose: Interactive TUI to generate, copy, and append Hyprland window rules.
-#          * Engine: Absolute Cursor Positioning (Perfect borders).
-#          * Core: Ported from Dusky TUI Template v2.8.2 (Refined).
+#          * Engine: Dusky Hybrid Master v3.3.2 (Ported)
+#          * Core: Window Scanning & Rule Generation Logic
 # ==============================================================================
 
 set -euo pipefail
@@ -11,7 +11,7 @@ export LC_NUMERIC=C
 # --- Configuration ---
 readonly TARGET_FILE="${HOME}/.config/hypr/edit_here/source/window_rules.conf"
 readonly APP_TITLE="Dusky Window Rule Generator"
-readonly APP_VERSION="v4.3"
+readonly APP_VERSION="v4.4 (Engine v3.3.2)"
 
 # Dimensions
 declare -ri BOX_WIDTH=100
@@ -47,7 +47,7 @@ readonly MOUSE_ON=$'\033[?1000h\033[?1002h\033[?1006h'
 readonly MOUSE_OFF=$'\033[?1000l\033[?1002l\033[?1006l'
 
 # Timeout for reading escape sequences
-readonly ESC_READ_TIMEOUT=0.02
+readonly ESC_READ_TIMEOUT=0.05
 
 # Pre-compute border line once
 declare BORDER_LINE=""
@@ -67,17 +67,25 @@ declare ORIGINAL_STTY=""
 
 # --- Helpers ---
 
+log_err() {
+    printf '%s[ERROR]%s %s\n' "$C_RED" "$C_RESET" "$1" >&2
+}
+
 cleanup() {
-    printf '%s%s%s%s' "$MOUSE_OFF" "$ALT_SCREEN_OFF" "$CURSOR_SHOW" "$C_RESET"
+    printf '%s%s%s%s' "$MOUSE_OFF" "$ALT_SCREEN_OFF" "$CURSOR_SHOW" "$C_RESET" 2>/dev/null || :
     
-    # Robustly restore original stty settings
+    # Robustly restore original stty settings (Template v3.3.2 + Fallback)
     if [[ -n "${ORIGINAL_STTY:-}" ]]; then
         stty "$ORIGINAL_STTY" 2>/dev/null || :
     else
         stty echo 2>/dev/null || :
     fi
+    printf '\n' 2>/dev/null || :
 }
-trap cleanup EXIT INT TERM
+
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 strip_ansi() {
     printf '%s' "$1" | sed "s/${ESC}\[[0-9;]*[a-zA-Z]//g"
@@ -103,7 +111,7 @@ scan_windows() {
     local cmd
     for cmd in jq hyprctl awk wl-copy; do
         if ! command -v "$cmd" &>/dev/null; then
-            printf '%s[ERROR] Missing dependency: %s%s\n' "$C_RED" "$cmd" "$C_RESET" >&2
+            log_err "Missing dependency: $cmd"
             exit 1
         fi
     done
@@ -347,39 +355,44 @@ navigate_end() {
 handle_mouse() {
     local input=$1
     local -i button x y
-    local type
 
-    # STRICT SGR regex from template
-    local regex='^\[<([0-9]+);([0-9]+);([0-9]+)([Mm])$'
+    # Fast string stripping (Template v3.3.2)
+    local body=${input#'[<'}
+    [[ "$body" == "$input" ]] && return 0
+    local terminator=${body: -1}
+    [[ "$terminator" != "M" && "$terminator" != "m" ]] && return 0
+    body=${body%[Mm]}
+    
+    local field1 field2 field3
+    IFS=';' read -r field1 field2 field3 <<< "$body"
+    
+    [[ ! "$field1" =~ ^[0-9]+$ ]] && return 0
+    [[ ! "$field2" =~ ^[0-9]+$ ]] && return 0
+    [[ ! "$field3" =~ ^[0-9]+$ ]] && return 0
+    
+    button=$field1; x=$field2; y=$field3
 
-    if [[ $input =~ $regex ]]; then
-        button=${BASH_REMATCH[1]}
-        x=${BASH_REMATCH[2]}
-        y=${BASH_REMATCH[3]}
-        type=${BASH_REMATCH[4]}
+    # Scroll wheel (64=up, 65=down)
+    if (( button == 64 )); then
+        navigate -1
+        return 0
+    elif (( button == 65 )); then
+        navigate 1
+        return 0
+    fi
 
-        # Scroll wheel (64=up, 65=down)
-        if (( button == 64 )); then
-            navigate -1
-            return 0
-        elif (( button == 65 )); then
-            navigate 1
-            return 0
-        fi
+    # Only handle Button Press ('M') for clicks
+    [[ $terminator != "M" ]] && return 0
 
-        # Only handle Button Press ('M') for clicks
-        [[ $type != "M" ]] && return 0
+    # Left Click (0)
+    if (( button == 0 )); then
+        local -i list_start_y=$((HEADER_HEIGHT + 1))
+        local -i list_end_y=$((list_start_y + MAX_DISPLAY_ROWS - 1))
 
-        # Left Click (0)
-        if (( button == 0 )); then
-            local -i list_start_y=$((HEADER_HEIGHT + 1))
-            local -i list_end_y=$((list_start_y + MAX_DISPLAY_ROWS - 1))
-
-            if (( y >= list_start_y && y <= list_end_y)); then
-                local -i clicked_idx=$((y - list_start_y + SCROLL_OFFSET))
-                if ((clicked_idx >= 0 && clicked_idx < ITEM_COUNT)); then
-                    SELECTED_ROW=$clicked_idx
-                fi
+        if (( y >= list_start_y && y <= list_end_y)); then
+            local -i clicked_idx=$((y - list_start_y + SCROLL_OFFSET))
+            if ((clicked_idx >= 0 && clicked_idx < ITEM_COUNT)); then
+                SELECTED_ROW=$clicked_idx
             fi
         fi
     fi
@@ -422,11 +435,33 @@ append_selection() {
     STATUS_MSG="[SUCCESS] Rule appended to config!"
 }
 
+# --- Event Loop (Template v3.3.2) ---
+
+read_escape_seq() {
+    local -n _esc_out=$1
+    local char
+    _esc_out=""
+    while IFS= read -rsn1 -t "$ESC_READ_TIMEOUT" char; do
+        _esc_out+="$char"
+        case "$_esc_out" in
+            '[Z')              return 0 ;;
+            O[A-Za-z])         return 0 ;;
+            '['*[A-Za-z~])     return 0 ;;
+        esac
+    done
+    return 0
+}
+
 # --- Main ---
 main() {
-    # 0. Bash Version Check
-    if (( BASH_VERSINFO[0] < 4 )); then
-        printf '%s[FATAL]%s Bash 4.0+ required\n' "$C_RED" "$C_RESET" >&2
+    # 0. Bash Version Check (Template Requirement)
+    if (( BASH_VERSINFO[0] < 5 )); then
+        printf '%s[FATAL]%s Bash 5.0+ required (found %s)\n' "$C_RED" "$C_RESET" "$BASH_VERSION" >&2
+        exit 1
+    fi
+
+    if [[ ! -t 0 ]]; then
+        log_err "Interactive terminal (TTY) required on stdin"
         exit 1
     fi
 
@@ -435,9 +470,15 @@ main() {
     # 1. Save Terminal State
     ORIGINAL_STTY=$(stty -g 2>/dev/null) || ORIGINAL_STTY=""
 
+    # 2. Configure Terminal (Template Method)
+    if ! stty -icanon -echo min 1 time 0 2>/dev/null; then
+        log_err "Failed to configure terminal (stty). Cannot run interactively."
+        exit 1
+    fi
+
     printf '%s%s%s%s' "$ALT_SCREEN_ON" "$MOUSE_ON" "$CURSOR_HIDE" "$CURSOR_HOME"
 
-    local key seq char
+    local key escape_seq
 
     while true; do
         draw_ui
@@ -446,19 +487,16 @@ main() {
         if [[ -n $STATUS_MSG && -n $key ]]; then STATUS_MSG=""; fi
 
         if [[ $key == $'\x1b' ]]; then
-            seq=""
-            while IFS= read -rsn1 -t "$ESC_READ_TIMEOUT" char; do
-                seq+="$char"
-            done
-            case $seq in
+            read_escape_seq escape_seq
+            case "$escape_seq" in
                 '[A'|'OA')     navigate -1 ;;       # Arrow Up
                 '[B'|'OB')     navigate 1 ;;        # Arrow Down
                 '[5~')         navigate_page -1 ;;  # Page Up
                 '[6~')         navigate_page 1 ;;   # Page Down
                 '[H'|'[1~')    navigate_end 0 ;;    # Home
                 '[F'|'[4~')    navigate_end 1 ;;    # End
-                # Mouse handling using loose glob
-                '['*'<'*)      handle_mouse "$seq" ;;
+                # Mouse handling using Template's loose glob
+                '['*'<'*[Mm])  handle_mouse "$escape_seq" ;;
             esac
         else
             case $key in
