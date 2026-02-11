@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# Dusky TUI Engine - Master v3.8.0
+# Dusky TUI Engine - Master v3.8.1
 # -----------------------------------------------------------------------------
 # Target: Arch Linux / Hyprland / UWSM / Wayland
 #
@@ -24,7 +24,7 @@ shopt -s extglob
 # POINT THIS TO YOUR REAL CONFIG FILE
 declare -r CONFIG_FILE="${HOME}/.config/hypr/change_me.conf"
 declare -r APP_TITLE="Input Config Editor"
-declare -r APP_VERSION="v3.8.0 (Hardened)"
+declare -r APP_VERSION="v3.8.1 (Hardened)"
 
 # Dimensions & Layout
 declare -ri MAX_DISPLAY_ROWS=14
@@ -157,7 +157,7 @@ strip_ansi() {
     # Strip CSI sequences (ESC [ ... m/K/H etc)
     v="${v//$'\033'\[*([0-9;?])@([a-zA-Z])/}"
     # Strip OSC sequences (ESC ] ... BEL/ST)
-    v="${v//$'\033'\]*($'\007'|$'\033\\'')}"
+    v="${v//$'\033'\]*($'\007'|$'\033\\')}"
     REPLY="$v"
 }
 
