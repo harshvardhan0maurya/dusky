@@ -185,14 +185,6 @@ declare -ra UPDATE_SEQUENCE=(
     "S | package_installation.sh"
 )
 
-#    "U | warp_toggle.sh --disconnect"
-    "U | waypaper_config_reset.sh"
-#    "U | fix_theme_dir.sh"
-    "U | copy_service_files.sh --default"
-    "U | update_checker.sh --num"
-    "S | package_installation.sh"
-)
-
 # ==============================================================================
 # END OF USER CONFIGURATION — Do not edit below unless you know what you're doing
 # ==============================================================================
