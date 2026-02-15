@@ -1193,7 +1193,7 @@ pages:
                 button_text: "Run"
               on_press:
                 type: exec
-                command: kitty --class 000_configure_uwsm_gpu.sh --hold sh -c "$HOME/user_scripts/arch_setup_scripts/scripts/000_configure_uwsm_gpu.sh"
+                command: kitty --class 000_configure_uwsm_gpu.sh --hold sh -c "$HOME/user_scripts/arch_setup_scripts/scripts/035_configure_uwsm_gpu.sh"
             - type: button
               properties:
                 title: Disable GPU Vars
@@ -1203,7 +1203,7 @@ pages:
                 button_text: "Run"
               on_press:
                 type: exec
-                command: kitty --class 000_uwsm_env_comment.sh --hold sh -c "$HOME/user_scripts/arch_setup_scripts/scripts/000_uwsm_env_comment.sh"
+                command: kitty --class 000_uwsm_env_comment.sh --hold sh -c "$HOME/user_scripts/arch_setup_scripts/scripts/030_uwsm_env_comment_everything.sh"
 
     - type: navigation
       properties:
@@ -1698,7 +1698,7 @@ pages:
         button_text: "Install"
       on_press:
         type: exec
-        command: kitty --class 010_warp.sh --hold sh -c "$HOME/user_scripts/arch_setup_scripts/scripts/010_warp.sh"
+        command: kitty --class 010_warp.sh --hold sh -c "$HOME/user_scripts/arch_setup_scripts/scripts/085_warp.sh"
         terminal: false
     - type: button
       properties:
@@ -1708,7 +1708,7 @@ pages:
         button_text: "Install"
       on_press:
         type: exec
-        command: kitty --class 069_waydroid_setup.sh --hold sh -c "$HOME/user_scripts/arch_setup_scripts/scripts/069_waydroid_setup.sh"
+        command: kitty --class 069_waydroid_setup.sh --hold sh -c "$HOME/user_scripts/arch_setup_scripts/scripts/385_waydroid_setup.sh"
         terminal: false
     - type: button
       properties:
@@ -1718,7 +1718,7 @@ pages:
         button_text: "Install"
       on_press:
         type: exec
-        command: kitty --class 009_aur_paru_fallback_yay.sh --hold sh -c "$HOME/user_scripts/arch_setup_scripts/scripts/009_aur_paru_fallback_yay.sh"
+        command: kitty --class 009_aur_paru_fallback_yay.sh --hold sh -c "$HOME/user_scripts/arch_setup_scripts/scripts/080_aur_paru_fallback_yay.sh"
         terminal: false
     - type: button
       properties:
